@@ -87,12 +87,19 @@ namespace RoleplayingMediaCore {
             Task.Run(() => {
                 RefreshElevenlabsSubscriptionInfo();
                 GetVoiceListElevenlabs();
-                string batchScript = @"cd /d" + cache + "\r\n" + _batchInstall;
+                string installBatchScript = @"cd /d" + cache + "\r\n" + _batchInstall;
                 installBatchFile = Path.Combine(cache, "install.bat");
-                File.WriteAllText(installBatchFile, batchScript);
-                batchScript = @"cd /d" + cache + "\r\n" + _installPythonBatch;
+                string pythonBatchScript = @"cd /d" + cache + "\r\n" + _installPythonBatch;
                 pythonBatchFile = Path.Combine(cache, "pythonInstall.bat");
-                File.WriteAllText(pythonBatchFile, batchScript);
+                try {
+                    File.WriteAllText(installBatchFile, installBatchScript);
+                    File.WriteAllText(pythonBatchFile, pythonBatchScript);
+                } catch (IOException e) {
+                    // These helper scripts are rewritten during background initialization.
+                    // Dalamud can construct the manager more than once during reloads, so a
+                    // locked script should not surface as an unobserved task exception.
+                    Debug.WriteLine($"Unable to update RPVoice helper install scripts: {e.Message}");
+                }
             });
         }
         public void InstallPython() {
